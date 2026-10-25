@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import imageio.v2 as imageio
 import subprocess
 import json
-from get_duration_impl import get_video_duration
+from get_duration_impl import get_video_duration, probe_media_info
 import uuid
 import threading
 from collections import OrderedDict
@@ -426,40 +426,17 @@ def update_media_metadata(script, task_id=None):
                     video.height = 1080
             
             elif video.material_type == 'video':
-                # Get video duration and width/height information
+                # Get video duration and width/height information using probe_media_info (imageio_ffmpeg/ffprobe)
                 try:
                     if task_id:
                         update_task_field(task_id, "message", f"Processing video metadata: {material_name}")
-                    # Use ffprobe to get video information
-                    command = [
-                        'ffprobe',
-                        '-v', 'error',
-                        '-select_streams', 'v:0',  # Select the first video stream
-                        '-show_entries', 'stream=width,height,duration',
-                        '-show_entries', 'format=duration',
-                        '-of', 'json',
-                        remote_url
-                    ]
-                    result = subprocess.check_output(command, stderr=subprocess.STDOUT)
-                    result_str = result.decode('utf-8')
-                    # Find JSON start position (first '{')
-                    json_start = result_str.find('{')
-                    if json_start != -1:
-                        json_str = result_str[json_start:]
-                        info = json.loads(json_str)
-                        
-                        if 'streams' in info and len(info['streams']) > 0:
-                            stream = info['streams'][0]
-                            # Set width and height
-                            video.width = int(stream.get('width', 0))
-                            video.height = int(stream.get('height', 0))
-                            logger.info(f"Successfully set video {material_name} dimensions: {video.width}x{video.height}.")
-                            
-                            # Set duration
-                            # Prefer stream duration, if not available use format duration
-                            duration = stream.get('duration') or info['format'].get('duration', '0')
-                            video.duration = int(float(duration) * 1000000)  # Convert to microseconds
-                            logger.info(f"Successfully obtained video {material_name} duration: {float(duration):.2f} seconds ({video.duration} microseconds).")
+                    probed = probe_media_info(remote_url)
+                    if probed.get("success") and probed.get("duration", 0) > 0:
+                        video.width = int(probed.get("width") or 720)
+                        video.height = int(probed.get("height") or 1280)
+                        duration = float(probed["duration"])
+                        video.duration = int(duration * 1000000)
+                        if True:
                             
                             # Update timerange for all segments using this video material
                             for track_name, track in script.tracks.items():

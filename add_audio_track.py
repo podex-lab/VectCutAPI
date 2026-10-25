@@ -5,6 +5,7 @@ from util import generate_draft_url, url_to_hash, build_draft_asset_path
 from typing import Optional, Dict, Tuple, List
 from pyJianYingDraft import exceptions, Audio_scene_effect_type, Tone_effect_type, Speech_to_song_type, CapCut_Voice_filters_effect_type,CapCut_Voice_characters_effect_type,CapCut_Speech_to_song_effect_type, trange
 from create_draft import get_or_create_draft
+from get_duration_impl import get_video_duration
 from settings.local import IS_CAPCUT_ENV
 
 def add_audio_track(
@@ -54,22 +55,16 @@ def add_audio_track(
     else:
        script.add_track(draft.Track_type.audio)
 
-    # If duration parameter is provided, prioritize it; otherwise use default audio duration of 0 seconds, real duration will be obtained during download
+    # If duration parameter is provided, prioritize it; otherwise probe real duration or fall back to end
     if duration is not None:
-        # Use the provided duration, skip duration retrieval and checking
-        audio_duration = duration
+        audio_duration = float(duration)
     else:
-        # Use default audio duration of 0 seconds, real duration will be obtained when downloading the draft
-        audio_duration = 0.0  # Default audio duration is 0 seconds
-        # duration_result = get_video_duration(audio_url)  # Reuse video duration retrieval function
-        # if not duration_result["success"]:
-        #     print(f"Failed to get audio duration: {duration_result['error']}")
-        
-        # # Check if audio duration exceeds 10 minutes
-        # if duration_result["output"] > 600:  # 600 seconds = 10 minutes
-        #     raise Exception(f"Audio duration exceeds 10-minute limit, current duration: {duration_result['output']} seconds")
-        
-        # audio_duration = duration_result["output"]
+        duration_result = get_video_duration(audio_url)
+        probed_dur = float(duration_result.get("output", 0.0)) if duration_result.get("success") else 0.0
+        if end is not None:
+            audio_duration = max(probed_dur, float(end))
+        else:
+            audio_duration = probed_dur if probed_dur > 0 else 24.0
     
     # Download audio to local
     # local_audio_path = download_audio(audio_url, draft_dir)

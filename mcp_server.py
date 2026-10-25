@@ -123,7 +123,7 @@ TOOLS = [
     },
     {
         "name": "add_text",
-        "description": "添加文本到草稿，支持文本多样式、文字阴影和文字背景",
+        "description": "添加文本到草稿，支持文本多样式、文字阴影、文字背景、描边和位置 (Default Font: Kanit_Black)",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -131,8 +131,14 @@ TOOLS = [
                 "start": {"type": "number", "description": "开始时间（秒）"},
                 "end": {"type": "number", "description": "结束时间（秒）"},
                 "draft_id": {"type": "string", "description": "草稿ID"},
+                "font": {"type": "string", "default": "Kanit_Black", "description": "字体名称，默认Kanit_Black或Kanit_Regular"},
                 "font_color": {"type": "string", "default": "#ffffff", "description": "字体颜色"},
-                "font_size": {"type": "integer", "default": 24, "description": "字体大小"},
+                "font_size": {"type": "number", "default": 13.0, "description": "字体大小"},
+                "transform_x": {"type": "number", "default": 0.0, "description": "X轴位置（-1.0到1.0）"},
+                "transform_y": {"type": "number", "default": 0.55, "description": "Y轴位置（-1.0到1.0）"},
+                "border_width": {"type": "number", "default": 0.0, "description": "文字描边宽度（例如12-16）"},
+                "border_color": {"type": "string", "default": "#000000", "description": "文字描边颜色"},
+                "border_alpha": {"type": "number", "default": 1.0, "description": "文字描边透明度"},
                 "shadow_enabled": {"type": "boolean", "default": False, "description": "是否启用文字阴影"},
                 "shadow_color": {"type": "string", "default": "#000000", "description": "阴影颜色"},
                 "shadow_alpha": {"type": "number", "default": 0.8, "description": "阴影透明度"},
@@ -140,9 +146,12 @@ TOOLS = [
                 "shadow_distance": {"type": "number", "default": 5.0, "description": "阴影距离"},
                 "shadow_smoothing": {"type": "number", "default": 0.0, "description": "阴影平滑度"},
                 "background_color": {"type": "string", "description": "背景颜色"},
-                "background_alpha": {"type": "number", "default": 1.0, "description": "背景透明度"},
-                "background_style": {"type": "integer", "default": 0, "description": "背景样式"},
-                "background_round_radius": {"type": "number", "default": 0.0, "description": "背景圆角半径"},
+                "background_alpha": {"type": "number", "default": 0.0, "description": "背景透明度（0.0-1.0）"},
+                "background_style": {"type": "integer", "default": 1, "description": "背景样式"},
+                "background_round_radius": {"type": "number", "default": 0.0, "description": "背景圆角半径（0.0-1.0）"},
+                "background_height": {"type": "number", "default": 0.14, "description": "背景高度"},
+                "background_width": {"type": "number", "default": 0.14, "description": "背景宽度"},
+                "align": {"type": "integer", "default": 1, "description": "对齐方式（0:左, 1:中, 2:右）"},
                 "text_styles": {"type": "array", "description": "文本多样式配置列表"}
             },
             "required": ["text", "start", "end"]
